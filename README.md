@@ -1,8 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Experiments
+
+A personal collection of WebGL, shader, and interaction experiments — built with Next.js, TypeScript, Tailwind, Three.js, and GSAP.
+
+Each experiment lives on its own route and is meant to be a small, self-contained study of a specific technique (fluid sims, raymarching, chrome materials, particle systems, physics-based motion, etc.) rather than a polished product. The goal is deliberate practice: understand the underlying rendering/shader concept, not just ship a visual.
+
+## Structure
+
+/app
+page.tsx → landing page, lists all experiments
+/components/[slug]/page.tsx → renders a single experiment full-screen
+
+/components
+/experiments/<slug>/ → one folder per experiment (component + shader code)
+/showcase/ → shared UI: ExperimentCard, ExperimentFrame
+
+/lib
+experiments.ts → single source of truth: registry of all experiments
+
+
+Adding a new experiment is just:
+1. New folder under `components/experiments/<slug>/`.
+2. One new entry in `lib/experiments.ts`.
+
+Routing, the landing page grid, and the individual experiment page all derive from that registry — nothing else needs to be touched.
+
+## Tech
+
+- **Next.js (App Router)** + **TypeScript**
+- **Tailwind CSS** for layout/UI
+- **Three.js** for 3D/WebGL scenes
+- **GSAP** (`@gsap/react`) for animation/timelines
+- Custom **GLSL** shaders per experiment where relevant
 
 ## Getting Started
 
-First, run the development server:
+Run the development server:
 
 ```bash
 npm run dev
@@ -14,23 +46,13 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the experiment index. Click into any card to view that experiment on its own route (`/components/<slug>`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Notes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- WebGL/canvas-based experiments are loaded with `next/dynamic` and `ssr: false`, since they depend on browser APIs (`window`, `canvas`) that can't render on the server. This avoids hydration mismatches.
+- Thumbnails for the landing page live in `/public/thumbnails/` — short looping GIF/webp previews work best.
 
-## Learn More
+## Deploy
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deployed on [Vercel](https://vercel.com/new). Every experiment route is statically generated at build time via `generateStaticParams`.
