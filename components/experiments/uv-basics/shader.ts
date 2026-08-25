@@ -1,11 +1,12 @@
 export const fragmentShaderA = /* glsl */ `
   uniform float uTime;
   varying vec2 vUv;
-
+uniform vec2 uMouse;
   void main() {
+  float dist = distance(vUv, uMouse);
     vec2 uv = vUv;
 
-    uv.x += sin(uv.y * 10.0 + uTime * 2.0) * 0.08;
+    uv.x += sin((uv.y * 10.0)-(dist * 10.0) + (uTime * 2.0)) * 0.08;
 
     gl_FragColor = vec4(uv.x,0.0,uv.y,1.0);
   }`;
@@ -13,11 +14,13 @@ export const fragmentShaderA = /* glsl */ `
 export const fragmentShaderB = /* glsl */ `
   uniform float uTime;
   uniform float uSpeed;
+  uniform vec2 uMouse;
 
   varying vec2 vUv;
 
   void main() {
-    float wave = sin(vUv.x * 20.0 + uTime * uSpeed);
+  float dist = distance(vUv, uMouse);
+    float wave = sin((vUv.x * 20.0)-(dist* 25.0) + (uTime * uSpeed));
     vec3 color = vec3(wave * 0.5 + 0.5, vUv.x, vUv.y);
     gl_FragColor = vec4(color, 1.0);
   }`;

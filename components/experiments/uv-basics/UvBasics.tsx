@@ -71,6 +71,7 @@ export default function UvBasics() {
           uResolution: {
             value: new THREE.Vector2(),
           },
+          uMouse:{value: new THREE.Vector2(0.5,0.5)},
           ...uniforms,
         },
       });
@@ -185,6 +186,15 @@ export default function UvBasics() {
     // Animation
     const clock = new THREE.Clock();
     let frameId = 0;
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2(-100, -100); // Start off-screen
+
+    const onPointerMove = (event: PointerEvent) => {
+      const rect = container.getBoundingClientRect();
+      // Normalize mouse coordinates to Three.js NDC (-1 to +1)
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    };
 
     const render = () => {
       const time = clock.getElapsedTime();
@@ -195,11 +205,22 @@ export default function UvBasics() {
           time
         );
       });
+      raycaster.setFromCamera(pointer, camera)
+      const meshes = planes.map((p) => p.mesh);
+      const intersects = raycaster.intersectObjects(meshes);
 
+      if (intersects.length > 0) {
+        const hit = intersects[0];
+        const hoveredPlane = planes.find((p) => p.mesh === hit.object);
+        if (hoveredPlane && hit.uv) {
+          hoveredPlane.material.uniforms.uMouse.value.copy(hit.uv);
+        }
+      }
       renderer.render(scene, camera);
       frameId = requestAnimationFrame(render);
     };
 
+    container.addEventListener("pointermove", onPointerMove);
     render();
 
     return () => {
@@ -213,6 +234,7 @@ export default function UvBasics() {
 
       geometry.dispose();
       renderer.dispose();
+      container.removeEventListener("pointermove", onPointerMove);
       renderer.domElement.remove();
     };
   }, []);
