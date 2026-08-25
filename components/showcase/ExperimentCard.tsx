@@ -8,7 +8,7 @@ export default function ExperimentCard({ experiment }: { experiment: Experiment 
   return (
     <Link
       href={`/components/${slug}`}
-      className="group block overflow-hidden rounded-2xl border border-gray-200 bg-white transition-shadow hover:shadow-lg"
+      className="group shrink-0 min-w-60 md:min-w-80 block overflow-hidden rounded-md border border-gray-200 bg-white transition-shadow hover:shadow-lg"
     >
       <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
         {thumbnail ? (
@@ -23,16 +23,16 @@ export default function ExperimentCard({ experiment }: { experiment: Experiment 
             No preview yet
           </div>
         )}
-        <span className="absolute left-3 top-3 rounded-full bg-black/70 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-white">
+        <span className="absolute left-2 top-2 rounded-sm bg-gray-500 px-2 py-0.5 text-[9px] uppercase tracking-wide font-semibold text-white">
           {category}
         </span>
       </div>
 
       <div className="p-4">
-        <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
         <p className="mt-1 line-clamp-2 text-sm text-gray-500">{description}</p>
 
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="mt-4 flex flex-wrap gap-2">
           {tech.map((t) => (
             <span
               key={t}
