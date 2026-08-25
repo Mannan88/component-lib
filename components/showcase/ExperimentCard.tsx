@@ -1,3 +1,4 @@
+"use client"
 import Link from "next/link";
 import Image from "next/image";
 import { Experiment } from "@/lib/experiments";
@@ -13,7 +14,7 @@ export default function ExperimentCard({ experiment }: { experiment: Experiment 
       <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
         {thumbnail ? (
           <Image
-            src={thumbnail}
+            src={`/component-lib/${thumbnail}`}
             alt={title}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"

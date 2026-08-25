@@ -1,3 +1,4 @@
+"use client"
 import { experiments } from "@/lib/experiments";
 import ExperimentCard from "@/components/showcase/ExperimentCard";
 
