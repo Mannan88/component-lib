@@ -12,5 +12,9 @@ export const experimentComponents: Record<string, ComponentType> = {
     () => import("@/components/experiments/noise-fun/NoiseFunciton"),
     {ssr: false}
   ),
+  "noise-uv": dynamic(
+    () => import('@/components/experiments/noise-uv/NoiseUVFunction'),
+    {ssr:false}
+  ),
 
 };

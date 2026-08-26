@@ -29,9 +29,16 @@ export const experiments: Experiment[] = [
     date: "2026-08-22",
     thumbnail:"/noise-thumbnail.png"
   },
-
-  // add new experiment metadata here
-];
+  {
+    slug: "noise-uv",
+    title: "Noise Function added to UV Co-ords",
+    description: "Visualizing and Animating UV co-ords using noise functions.",
+    category: "shader",
+    tech: ["Three.js", "GLSL"],
+    date: "2026-08-26",
+     thumbnail:"/noise-uv-thumbnail.png"
+     },
+  ];
 
 export function getExperiment(slug: string) {
   return experiments.find((e) => e.slug === slug);
