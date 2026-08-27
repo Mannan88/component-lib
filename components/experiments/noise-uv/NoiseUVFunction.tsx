@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { fragmentShaderA, fragmentShaderB } from "./shader";
+import { fragmentShaderA, fragmentShaderB, fragmentShaderC, fragmentShaderD,fragmentShaderE, fragmentShaderF } from "./shader";
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -61,6 +61,8 @@ export default function NoiseGrid() {
           uTime: { value: 0 },
           uResolution: { value: new THREE.Vector2() },
           uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+          uPhase: { value: 0 },
+          uHover: { value: 0 },
           ...uniforms,
         },
       });
@@ -85,10 +87,10 @@ export default function NoiseGrid() {
 
     addPlane({ fragmentShader: fragmentShaderA, position: [-x, y / 2, 0], onFrame: updateTime });
     addPlane({ fragmentShader: fragmentShaderB, position: [0, y / 2, 0], onFrame: updateTime });
-    addPlane({ fragmentShader: fragmentShaderA, position: [x, y / 2, 0], onFrame: updateTime });
-    addPlane({ fragmentShader: fragmentShaderB, position: [-x, -y / 2, 0], onFrame: updateTime });
-    addPlane({ fragmentShader: fragmentShaderA, position: [0, -y / 2, 0], onFrame: updateTime });
-    addPlane({ fragmentShader: fragmentShaderB, position: [x, -y / 2, 0], onFrame: updateTime });
+    addPlane({ fragmentShader: fragmentShaderC, position: [x, y / 2, 0], onFrame: updateTime });
+    addPlane({ fragmentShader: fragmentShaderD, position: [-x, -y / 2, 0], onFrame: updateTime });
+    addPlane({ fragmentShader: fragmentShaderE, position: [0, -y / 2, 0], onFrame: updateTime });
+    addPlane({ fragmentShader: fragmentShaderF, position: [x, -y / 2, 0], onFrame: updateTime });
 
     const resize = () => {
       const width = container.clientWidth;
@@ -126,6 +128,7 @@ export default function NoiseGrid() {
 
     const clock = new THREE.Clock();
     let frameId = 0;
+    let lastTime = 0; // REQUIRED for phase calculation
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2(-100, -100);
 
@@ -137,22 +140,38 @@ export default function NoiseGrid() {
 
     const render = () => {
       const time = clock.getElapsedTime();
-
-      planes.forEach((plane) => {
-        plane.onFrame?.(plane.material.uniforms, time);
-      });
+      const delta = time - lastTime;
+      lastTime = time;
 
       raycaster.setFromCamera(pointer, camera);
       const meshes = planes.map((p) => p.mesh);
       const intersects = raycaster.intersectObjects(meshes);
+      const hoveredMesh = intersects.length > 0 ? intersects[0].object : null;
 
-      if (intersects.length > 0) {
-        const hit = intersects[0];
-        const hoveredPlane = planes.find((p) => p.mesh === hit.object);
-        if (hoveredPlane && hit.uv) {
-          hoveredPlane.material.uniforms.uMouse.value.copy(hit.uv);
+      // FIXED: Added delta logic and smooth hover calculation to every plane
+      planes.forEach((plane) => {
+        const uniforms = plane.material.uniforms;
+        const isHovered = plane.mesh === hoveredMesh;
+
+        // 1. Smoothly transition uHover toward 1.0 if hovered, 0.0 if not
+        const targetHover = isHovered ? 1.0 : 0.0;
+        uniforms.uHover.value += (targetHover - uniforms.uHover.value) * 0.1;
+
+        // 2. Calculate the current speed based on the hover state
+        const normalSpeed = 0.2;
+        const fastSpeed = 2.0;
+        const currentSpeed = THREE.MathUtils.lerp(normalSpeed, fastSpeed, uniforms.uHover.value);
+
+        // 3. Add to the phase using delta time (prevents the snap!)
+        uniforms.uPhase.value += currentSpeed * delta;
+
+        // 4. Update the exact mouse position on the plane if it's the one hovered
+        if (isHovered && intersects[0].uv) {
+          uniforms.uMouse.value.copy(intersects[0].uv);
         }
-      }
+
+        plane.onFrame?.(uniforms, time);
+      });
 
       renderer.render(scene, camera);
       frameId = requestAnimationFrame(render);

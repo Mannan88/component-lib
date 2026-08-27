@@ -1,6 +1,4 @@
 // Classic 3D simplex noise (Ashima Arts / Ian McEwan, MIT licensed).
-// This is copy-pasted, not hand-written — as discussed, nobody writes this from scratch.
-// Keep this string as your reusable "noise toolkit" chunk — every future shader can prepend it.
 const snoise3D = /* glsl */ `
   vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
   vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -74,12 +72,10 @@ export const fragmentShaderA = /* glsl */ `
 
   void main() {
     float dist = distance(vUv, uMouse);
-
-    // mouse proximity pushes extra "energy" into the noise near the cursor
     float mouseInfluence = smoothstep(0.4, 0.0, dist);
 
     float n = snoise(vec3(vUv * 3.0, uTime * 0.3 + mouseInfluence * 2.0));
-    n = n * 0.5 + 0.5; // remap from [-1, 1] to [0, 1]
+    n = n * 0.5 + 0.5;
 
     vec3 color = mix(vec3(0.05, 0.1, 0.3), vec3(0.9, 0.3, 0.6), n);
     gl_FragColor = vec4(color, 1.0);
@@ -95,15 +91,126 @@ export const fragmentShaderB = /* glsl */ `
 
   void main() {
     float dist = distance(vUv, uMouse);
-    float mouseInfluence = smoothstep(0.4, 0.0, dist);
+    float mouseInfluence = smoothstep(0.2, 0.0, dist);
 
-    // layer two octaves of noise for richer, more "liquid" motion
     float n1 = snoise(vec3(vUv * 4.0, uTime * 0.25));
     float n2 = snoise(vec3(vUv * 8.0, uTime * 0.4 + 10.0));
-    float n = n1 * 0.6 + n2 * 0.4 + mouseInfluence * 0.5;
+    float n = n1 * 0.6 + n2 * 0.4 + mouseInfluence * 0.8;
     n = n * 0.5 + 0.5;
 
     vec3 color = mix(vec3(0.0, 0.15, 0.2), vec3(0.1, 0.9, 0.8), n);
     gl_FragColor = vec4(color, 1.0);
+  }
+`;
+export const fragmentShaderC = /* glsl */ `
+  uniform float uTime;
+  uniform vec2 uMouse;
+  varying vec2 vUv;
+
+  ${snoise3D}
+
+  void main() {
+    float dist = distance(vUv, uMouse);
+    float mouseInfluence = smoothstep(0.4, 0.0, dist);
+    float wave = sin(dist*20.0 - uTime*5.0);
+    float n = snoise(vec3(vUv * 3.0, uTime * 0.3 + mouseInfluence * wave));
+    n = n * 0.5 + 0.5;
+
+    vec3 color = mix(vec3(0.5, 0.1, 0.9), vec3(0.1, 0.8, 0.3), n);
+    gl_FragColor = vec4(color, 1.0);
+  }
+`;
+export const fragmentShaderD = /* glsl */ `
+  uniform float uTime;
+  uniform float uPhase;
+  uniform float uHover;
+  uniform vec2 uMouse;
+  varying vec2 vUv;
+
+  ${snoise3D}
+
+  void main() {
+    vec2 center = vec2(0.5);
+    vec2 uv = vUv - center;
+    float dist = length(uv);
+
+    float influence = 1.0 - smoothstep(0.0, 0.5, dist);
+    float angle = influence * 2.0 + uPhase;
+
+    mat2 rotation = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+    uv = rotation * uv;
+    float n = snoise(vec3(uv * 3.0, uTime * 0.3));
+    n = n * 0.5 + 0.5;
+
+    vec3 color = mix(vec3(0.1, 0.0, 0.4), vec3(0.1, 0.0, 0.8), n);
+    gl_FragColor = vec4(color, 1.0);
+  }
+`;
+export const fragmentShaderE = /* glsl */ `
+  uniform float uTime;
+  uniform float uPhase;
+  uniform float uHover;
+  uniform vec2 uMouse;
+  varying vec2 vUv;
+
+  ${snoise3D}
+
+  void main() {
+    vec2 uv = vUv;
+    float speed = uTime * 0.5 + uPhase * 0.5;
+    vec3 noiseUv = vec3(uv.x * 6.0, uv.y * 6.0 - speed, uTime * 0.2);
+    float noise1 = snoise(noiseUv);
+    float noise2 = snoise(noiseUv + vec3(12.34));
+    float distortionStrength = mix(0.04, 0.08, uHover);
+
+    uv.x += noise1 * distortionStrength;
+    uv.y += noise2 * (distortionStrength * 0.8);
+
+    vec3 hotColor = vec3(1.0, 0.7, 0.1);
+    vec3 coolColor = vec3(0.7, 0.0, 0.1);
+    vec3 finalColor = mix(hotColor, coolColor, uv.y);
+
+    float dist = distance(vUv, vec2(0.5));
+    finalColor -= smoothstep(0.3, 0.8, dist) * 0.3;
+
+    gl_FragColor = vec4(finalColor, 1.0);
+  }
+`;
+export const fragmentShaderF = /* glsl */ `
+  uniform float uTime;
+  uniform float uPhase; // Accelerates the twisting on hover
+  uniform float uHover;
+  uniform vec2 uMouse;
+  varying vec2 vUv;
+
+  void main() {
+
+    vec2 uv = vUv * 2.0 - 1.0;
+    float mouseDist = distance(vUv, uMouse);
+    float repulsion = smoothstep(0.4, 0.0, mouseDist) * uHover;
+    vec2 dir = vUv - uMouse;
+    if (length(dir) > 0.0) {
+      dir = normalize(dir);
+      uv += dir * repulsion * 0.5;
+    }
+    vec3 finalColor = vec3(0.0);
+
+    for(float i = 1.0; i <= 5.0; i++) {
+
+      float t = uPhase * 0.5 + (i * 1.234);
+      float curve = sin(uv.y * 3.0 + t) * 0.4 + cos(uv.y * 5.0 - t * 0.7) * 0.2;
+      float dist = abs(uv.x - curve);
+      float core = smoothstep(0.015, 0.005, dist);
+      float glow = smoothstep(0.15, 0.0, dist) * 0.4;
+
+      vec3 strandColor = vec3(
+        sin(i) * 0.5 + 0.5,
+        0.1 + uHover * 0.3,
+        1.0
+      );
+
+      finalColor += strandColor * (core + glow);
+    }
+    gl_FragColor = vec4(finalColor, 1.0);
   }
 `;
