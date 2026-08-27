@@ -1,58 +1,57 @@
-# Experiments
+# WebGL & Shader Experiments
 
-A personal collection of WebGL, shader, and interaction experiments — built with Next.js, TypeScript, Tailwind, Three.js, and GSAP.
+**Live Demo:** [https://mannan88.github.io/component-lib/](https://mannan88.github.io/component-lib/)
 
-Each experiment lives on its own route and is meant to be a small, self-contained study of a specific technique (fluid sims, raymarching, chrome materials, particle systems, physics-based motion, etc.) rather than a polished product. The goal is deliberate practice: understand the underlying rendering/shader concept, not just ship a visual.
+A personal collection of WebGL, shader, and interaction experiments built with Next.js, TypeScript, Tailwind CSS, Three.js, and GSAP. 
+
+Each experiment lives on its own route and serves as a small, self-contained study of a specific technique (fluid sims, raymarching, chrome materials, particle systems, physics-based motion, etc.). The goal of this repo is deliberate practice: understanding the underlying rendering and shader concepts from the ground up, rather than just shipping a polished visual.
 
 ## Structure
 
+```text
 /app
-page.tsx → landing page, lists all experiments
-/components/[slug]/page.tsx → renders a single experiment full-screen
+  page.tsx                     → Landing page, lists all experiments
+  /components/[slug]/page.tsx  → Renders a single experiment full-screen
 
 /components
-/experiments/<slug>/ → one folder per experiment (component + shader code)
-/showcase/ → shared UI: ExperimentCard, ExperimentFrame
+  /experiments/<slug>/         → One folder per experiment (React component + GLSL code)
+  /showcase/                   → Shared UI components (ExperimentCard, ExperimentFrame)
 
 /lib
-experiments.ts → single source of truth: registry of all experiments
+  experiments.ts               → Registry of all experiments (Single Source of Truth)
 
+```
+Adding a new experiment is straightforward:
 
-Adding a new experiment is just:
-1. New folder under `components/experiments/<slug>/`.
-2. One new entry in `lib/experiments.ts`.
+1. Create a new folder under `components/experiments/<slug>/`.
+2. Add a new entry to `lib/experiments.ts`.
 
-Routing, the landing page grid, and the individual experiment page all derive from that registry — nothing else needs to be touched.
+Routing, the landing page grid, and the individual experiment pages all derive dynamically from that registry. Nothing else needs to be touched.
 
-## Tech
+## Tech Stack
 
-- **Next.js (App Router)** + **TypeScript**
-- **Tailwind CSS** for layout/UI
-- **Three.js** for 3D/WebGL scenes
-- **GSAP** (`@gsap/react`) for animation/timelines
-- Custom **GLSL** shaders per experiment where relevant
+* **Next.js (App Router)** + **TypeScript**
+* **Tailwind CSS** for layout and UI
+* **Three.js** for 3D/WebGL scenes
+* **GSAP** (`@gsap/react`) for animation and timelines
+* Custom **GLSL** for vertex and fragment shaders
 
 ## Getting Started
 
-Run the development server:
+Clone the repo, install dependencies, and run the development server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# or yarn / pnpm / bun equivalents
+
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the experiment index. Click into any card to view that experiment on its own route (`/components/<slug>`).
+Open [http://localhost:3000/component-lib/](https://www.google.com/search?q=http://localhost:3000/component-lib/) in your browser to see the experiment index. Click into any card to view that experiment on its own route.
+
+*(Note: The `/component-lib/` base path is required locally to match the production routing).*
 
 ## Notes
 
-- WebGL/canvas-based experiments are loaded with `next/dynamic` and `ssr: false`, since they depend on browser APIs (`window`, `canvas`) that can't render on the server. This avoids hydration mismatches.
-- Thumbnails for the landing page live in `/public/thumbnails/` — short looping GIF/webp previews work best.
-
-## Deploy
-
-Deployed on [Vercel](https://vercel.com/new). Every experiment route is statically generated at build time via `generateStaticParams`.
+* WebGL/canvas-based experiments are dynamically imported using `next/dynamic` with `ssr: false`. Since they depend heavily on browser-specific APIs (`window`, `HTMLCanvasElement`), this prevents server-side rendering errors and hydration mismatches.
+* Thumbnails for the landing page are stored in `/public/thumbnails/`.
