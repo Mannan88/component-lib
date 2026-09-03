@@ -16,5 +16,13 @@ export const experimentComponents: Record<string, ComponentType> = {
     () => import('@/components/experiments/noise-uv/NoiseUVFunction'),
     {ssr:false}
   ),
+  "liquid-img": dynamic(
+    () => import('@/components/experiments/liquid-image-hover/liquidImageHover'),
+    {ssr:false}
+  ),
+  "chrome-sphere": dynamic(
+    () => import('@/components/experiments/chrome-blob/ChromeBlob'),
+    {ssr:false}
+  ),
 
 };
