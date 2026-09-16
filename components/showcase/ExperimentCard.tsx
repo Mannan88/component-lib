@@ -9,7 +9,7 @@ export default function ExperimentCard({ experiment }: { experiment: Experiment 
   return (
     <Link
       href={`/components/${slug}`}
-      className="group shrink-0 min-w-60 md:min-w-80 block overflow-hidden rounded-md border border-gray-200 bg-white transition-shadow hover:shadow-lg"
+      className="group shrink-0 min-w-60 md:min-w-80 block overflow-hidden rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-lg"
     >
       <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
         {thumbnail ? (
@@ -17,14 +17,14 @@ export default function ExperimentCard({ experiment }: { experiment: Experiment 
             src={`/component-lib/${thumbnail}`}
             alt={title}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="object-cover transition-transform duration-500 group-hover:scale-102"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-gray-400">
             No preview yet
           </div>
         )}
-        <span className="absolute left-2 top-2 rounded-sm bg-gray-500 px-2 py-0.5 text-[9px] uppercase tracking-wide font-semibold text-white">
+        <span className="absolute left-2 top-2 rounded-sm bg-gray-600 px-2 py-0.5 text-[9px] uppercase tracking-wide font-semibold text-white">
           {category}
         </span>
       </div>
@@ -37,7 +37,7 @@ export default function ExperimentCard({ experiment }: { experiment: Experiment 
           {tech.map((t) => (
             <span
               key={t}
-              className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600"
+              className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
             >
               {t}
             </span>

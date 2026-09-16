@@ -7,11 +7,14 @@ import {
   useRef,
 } from "react";
 import * as THREE from "three";
-import { SimplexNoise } from "three/examples/jsm/Addons.js";
+import { OrbitControls, SimplexNoise } from "three/examples/jsm/Addons.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
 export type ChromeNoiseSphereHandle = {
   setAmplitude: (value: number) => void;
+  setMetalness: (value: number) => void;
+  setRoughness: (value: number) => void;
+  setIridescence: (value: number) => void;
 };
 
 type ChromeNoiseSphereProps = {
@@ -20,6 +23,7 @@ type ChromeNoiseSphereProps = {
   speed?: number;
   metalness?: number;
   roughness?: number;
+  iridescence?: number;
   color?: string;
 };
 
@@ -31,24 +35,31 @@ const ChromeNoiseSphere = forwardRef<ChromeNoiseSphereHandle, ChromeNoiseSphereP
       speed = 0.3,
       metalness = 1,
       roughness = 0.15,
+      iridescence = 0.6,
       color = "#ffffff",
     },
     ref
   ) {
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Live-adjustable value, read every frame — not React state, since
-    // React state would re-render and re-trigger this whole effect on
-    // every slider tick, tearing down and rebuilding the WebGL scene.
+    // Refs for real-time updates
     const amplitudeRef = useRef(initialAmplitude);
+    const metalnessRef = useRef(metalness);
+    const roughnessRef = useRef(roughness);
+    const iridescenceRef = useRef(iridescence);
 
-    // Exposes an imperative method so a PARENT component (e.g. a slider's
-    // onChange handler) can push new values in without owning any of the
-    // WebGL setup itself. Same pattern you'll want for your portfolio's
-    // Section 3 shape-adjustment slider.
     useImperativeHandle(ref, () => ({
       setAmplitude: (value: number) => {
         amplitudeRef.current = value;
+      },
+      setMetalness: (value: number) => {
+        metalnessRef.current = value;
+      },
+      setRoughness: (value: number) => {
+        roughnessRef.current = value;
+      },
+      setIridescence: (value: number) => {
+        iridescenceRef.current = value;
       },
     }));
 
@@ -57,7 +68,6 @@ const ChromeNoiseSphere = forwardRef<ChromeNoiseSphereHandle, ChromeNoiseSphereP
       if (!container) return;
 
       const simplex = new SimplexNoise();
-
       const scene = new THREE.Scene();
 
       const camera = new THREE.PerspectiveCamera(
@@ -66,40 +76,28 @@ const ChromeNoiseSphere = forwardRef<ChromeNoiseSphereHandle, ChromeNoiseSphereP
         0.1,
         100
       );
-      camera.position.set(0, 0, 4);
+      camera.position.set(0, 0, 6);
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.domElement.style.display = "block";
       renderer.domElement.style.width = "100%";
       renderer.domElement.style.height = "100%";
       container.appendChild(renderer.domElement);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-      // --- environment map: this is what makes chrome look like chrome ---
-      // PMREMGenerator + RoomEnvironment builds a ready-made HDRI-like
-      // environment procedurally, so there's no external .hdr file to host.
       const pmremGenerator = new THREE.PMREMGenerator(renderer);
       const envRenderTarget = pmremGenerator.fromScene(new RoomEnvironment(), 0.04);
       scene.environment = envRenderTarget.texture;
 
-      // A light subtle highlight on top of the env reflections — not
-      // strictly required (the environment does most of the work), but
-      // gives a cleaner, more directional specular highlight.
       const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
       keyLight.position.set(3, 3, 3);
       scene.add(keyLight);
-      // const keyLightTwo = new THREE.DirectionalLight(0x111111, 1);
-      // keyLight.position.set(2,-3, 3);
-      // scene.add(keyLightTwo);
 
-
-      // --- geometry: enough subdivisions for smooth-looking displacement ---
       const geometry = new THREE.SphereGeometry(1, 128, 128);
       const position = geometry.attributes.position;
-
-      // store each vertex's original (undisplaced) direction/length —
-      // noise displaces ALONG the sphere's normal, not along raw x/y/z,
-      // otherwise the shape would skew instead of staying round-ish.
       const basePositions = position.array.slice();
 
       const material = new THREE.MeshPhysicalMaterial({
@@ -107,6 +105,50 @@ const ChromeNoiseSphere = forwardRef<ChromeNoiseSphereHandle, ChromeNoiseSphereP
         metalness,
         roughness,
       });
+
+      material.onBeforeCompile = (shader) => {
+        shader.uniforms.uTime = { value: 0 };
+        shader.uniforms.uHaloStrength = { value: iridescenceRef.current };
+        material.userData.shader = shader;
+
+        shader.fragmentShader = shader.fragmentShader.replace(
+          "#include <common>",
+          `
+          #include <common>
+
+          uniform float uTime;
+          uniform float uHaloStrength;
+          `
+        );
+
+        shader.fragmentShader = shader.fragmentShader.replace(
+          "#include <dithering_fragment>",
+          /* glsl */ `
+          vec3 viewDir = normalize(-vViewPosition);
+
+          vec3 surfaceNormal = normalize(vNormal);
+
+          float fresnel = pow(
+            1.0 - abs(dot(surfaceNormal, viewDir)),
+            3.0
+          );
+
+          float hue = fract(fresnel * 1.5 + uTime * 0.05);
+
+          vec3 rainbow = vec3(
+            abs(hue * 6.0 - 3.0) - 1.0,
+            2.0 - abs(hue * 6.0 - 2.0),
+            2.0 - abs(hue * 6.0 - 4.0)
+          );
+
+          rainbow = clamp(rainbow, 0.0, 1.0);
+
+          gl_FragColor.rgb += rainbow * fresnel * uHaloStrength;
+
+          #include <dithering_fragment>
+          `
+        );
+      };
 
       const mesh = new THREE.Mesh(geometry, material);
       scene.add(mesh);
@@ -121,6 +163,10 @@ const ChromeNoiseSphere = forwardRef<ChromeNoiseSphereHandle, ChromeNoiseSphereP
         camera.updateProjectionMatrix();
       };
 
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.enableZoom = false;
+
       const resizeObserver = new ResizeObserver(resize);
       resizeObserver.observe(container);
       resize();
@@ -132,14 +178,16 @@ const ChromeNoiseSphere = forwardRef<ChromeNoiseSphereHandle, ChromeNoiseSphereP
         const elapsedTime = time * 0.001;
         const amplitude = amplitudeRef.current;
 
+        // Apply material properties dynamically every frame
+        material.metalness = metalnessRef.current;
+        material.roughness = roughnessRef.current;
+
         for (let i = 0; i < position.count; i++) {
           const ix = i * 3;
           const bx = basePositions[ix];
           const by = basePositions[ix + 1];
           const bz = basePositions[ix + 2];
 
-          // bx/by/bz already point outward from center (sphere is centered
-          // at origin with radius 1), so they double as the normal direction
           const noiseValue = simplex.noise3d(
             bx * frequency + elapsedTime * speed,
             by * frequency,
@@ -147,17 +195,24 @@ const ChromeNoiseSphere = forwardRef<ChromeNoiseSphereHandle, ChromeNoiseSphereP
           );
 
           const displacement = 1 + noiseValue * amplitude;
-
           position.setXYZ(i, bx * displacement, by * displacement, bz * displacement);
         }
 
         position.needsUpdate = true;
-        geometry.computeVertexNormals(); // <-- required for correct chrome reflections
+        geometry.computeVertexNormals();
 
         mesh.rotation.y = elapsedTime * 0.15;
 
+        if (material.userData.shader) {
+          material.userData.shader.uniforms.uTime.value = elapsedTime;
+          // Apply iridescence (halo strength) dynamically
+          material.userData.shader.uniforms.uHaloStrength.value = iridescenceRef.current;
+        }
+
+        controls.update();
         renderer.render(scene, camera);
       }
+
       animationId = requestAnimationFrame(animate);
 
       return () => {
@@ -169,8 +224,9 @@ const ChromeNoiseSphere = forwardRef<ChromeNoiseSphereHandle, ChromeNoiseSphereP
         pmremGenerator.dispose();
         renderer.dispose();
         renderer.domElement.remove();
+        controls.dispose();
       };
-    }, [frequency, speed, metalness, roughness, color]);
+    }, [frequency, speed, color]); // Removed refs from dependency array so they don't trigger rebuilds
 
     return <div ref={containerRef} className="h-full w-full" />;
   }
