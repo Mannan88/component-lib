@@ -24,5 +24,9 @@ export const experimentComponents: Record<string, ComponentType> = {
     () => import('@/components/experiments/chrome-blob/ChromeBlob'),
     {ssr:false}
   ),
+  "ascii-sphere": dynamic(
+    () => import('@/components/experiments/ascii-sphere/AsciiSphere'),
+    {ssr:false}
+  ),
 
 };

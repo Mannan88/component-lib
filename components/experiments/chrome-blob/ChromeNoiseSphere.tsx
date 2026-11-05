@@ -106,11 +106,13 @@ const ChromeNoiseSphere = forwardRef<ChromeNoiseSphereHandle, ChromeNoiseSphereP
         roughness,
       });
 
+     //We use this to apply the iridescence before the object is sent for compiling.
       material.onBeforeCompile = (shader) => {
         shader.uniforms.uTime = { value: 0 };
         shader.uniforms.uHaloStrength = { value: iridescenceRef.current };
         material.userData.shader = shader;
 
+    //replacing the GLSL which is about to be sent to for processing with some custom adjustments.
         shader.fragmentShader = shader.fragmentShader.replace(
           "#include <common>",
           `
@@ -178,7 +180,6 @@ const ChromeNoiseSphere = forwardRef<ChromeNoiseSphereHandle, ChromeNoiseSphereP
         const elapsedTime = time * 0.001;
         const amplitude = amplitudeRef.current;
 
-        // Apply material properties dynamically every frame
         material.metalness = metalnessRef.current;
         material.roughness = roughnessRef.current;
 
@@ -226,7 +227,7 @@ const ChromeNoiseSphere = forwardRef<ChromeNoiseSphereHandle, ChromeNoiseSphereP
         renderer.domElement.remove();
         controls.dispose();
       };
-    }, [frequency, speed, color]); // Removed refs from dependency array so they don't trigger rebuilds
+    }, [frequency, speed, color]);
 
     return <div ref={containerRef} className="h-full w-full" />;
   }

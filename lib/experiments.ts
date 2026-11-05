@@ -55,6 +55,15 @@ export const experiments: Experiment[] = [
     tech: ["Three.js", "Chrome","Noise"],
     date: "2026-08-30",
      thumbnail:"/chrome-sphere.png"
+  },
+  {
+    slug: "ascii-sphere",
+    title: "ASCII Sphere",
+    description: "Sphere made of ASCII letters, made interactable",
+    category: "3D",
+    tech: ["Three.js", "ASCII","GLSL"],
+    date: "2026-08-30",
+     thumbnail:"/chrome-sphere.png"
     },
   ];
 
