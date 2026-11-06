@@ -63,7 +63,7 @@ export const experiments: Experiment[] = [
     category: "3D",
     tech: ["Three.js", "ASCII","GLSL"],
     date: "2026-08-30",
-     thumbnail:"/chrome-sphere.png"
+    thumbnail:"/ascii-sphere.png"
     },
   ];
 

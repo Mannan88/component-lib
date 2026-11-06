@@ -11,7 +11,7 @@ const CONFIG = {
   colors: {
     background: "#07090d",
     letter: "#5d6b82", // resting letter colour
-    letterHover: "#9dffc8",
+    letterHover: "#f1f1f1",
   },
 
   sphere: {
@@ -24,10 +24,10 @@ const CONFIG = {
   },
 
   hover: {
-    radius: 1, // reach of the effect, measured along the surface
-    falloff: 0.8, // >1 = tighter peak, <1 = flatter
-    lift: 0.4, // how far the centre letter pops toward the camera
-    spread: 0.2, // how far neighbours are pushed away (surface units)
+    radius: 0.8, // reach of the effect, measured along the surface
+    falloff: 0.2, // >1 = tighter peak, <1 = flatter
+    lift: 0.2, // how far the centre letter pops toward the camera
+    spread: 0.4, // how far neighbours are pushed away (surface units)
     scaleBoost: 0.4, // extra scale at the centre (0 = none)
     followDuration: 0.4, // seconds – how smoothly the effect trails the cursor
     enterDuration: 0.6, // seconds – fade-in of the effect
